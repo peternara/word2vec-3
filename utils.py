@@ -51,14 +51,42 @@ data, count, dictionary, reverse_dictionary = build_dataset(vocabulary,
                                                             vocabulary_size)
 del vocabulary  # Hint to reduce memory.
 
-def build_batch(data, batch_size, window_size):
-  # data_batch: [iter, batch_size, window_size]
-  # labl_batch: [iter, batch_size, 1]
+def build_batch(meth, data, batch_size, window_size):
+  '''
+  meth = 'cbow' or 'skip'
+
+  window_size: the actual size of windows is window_size+1, if meth is 'skip' and the given window_size is even.
+
+  returns data_batch, labl_bath
+  
+  when meth = 'cbow'
+    data_batch: [iter, batch_size, window_size]
+    labl_batch: [iter, batch_size, 1]
+
+  when meth = 'skip'
+    data_batch: [iter, batch_size, 1]
+    labl_batch: [iter, batch_size, window_size]
+  '''
+
+  if meth not in ['cbow', 'skip']:
+    raise ValueError('invalid value for meth')
+
   data_batch = []
   labl_batch = []
-  for ind in range(len(data) - window_size):
-    words = list(data[ind:ind+window_size])
-    labls = data[ind+window_size]
+
+  if meth == 'cbow':
+    rng = range(len(data) - window_size)
+  elif meth == 'skip':
+    window_size = window_size // 2  # window size to one side
+    rng = range(window_size, len(data) - window_size - 1)
+
+  for ind in rng:
+    if meth == 'cbow':
+      words = data[ind:ind+window_size]
+      labls = data[ind+window_size]
+    elif meth == 'skip':
+      words = data[ind]
+      labls = data[ind-window_size:ind] + data[ind+1:ind+window_size+1]
     data_batch.append(np.array(words))
     labl_batch.append(labls)
 
@@ -66,8 +94,12 @@ def build_batch(data, batch_size, window_size):
   data_batch = data_batch[0:length_of_data]
   labl_batch = labl_batch[0:length_of_data]
 
-  data_batch = np.array(data_batch).reshape([-1, batch_size, window_size])
-  labl_batch = np.array(labl_batch).reshape([-1, batch_size, 1])
+  if meth == 'cbow':
+    data_batch = np.array(data_batch).reshape([-1, batch_size, window_size])
+    labl_batch = np.array(labl_batch).reshape([-1, batch_size, 1])
+  elif meth == 'skip':
+    data_batch = np.array(data_batch).reshape([-1, batch_size, 1])
+    labl_batch = np.array(labl_batch).reshape([-1, batch_size, window_size*2]) 
 
   return data_batch, labl_batch
 

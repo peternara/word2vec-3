@@ -1,11 +1,6 @@
 import numpy as np
 from numpy import linalg as la
 from utils import dictionary
-import pickle
-
-def load_embedding():
-    with open('word-embedding.mat', 'rb') as f:
-        return pickle.load(f)
 
 def read_questions():
     questions = []
